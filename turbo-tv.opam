@@ -1,0 +1,22 @@
+opam-version: "2.0"
+name: "turbo-tv"
+homepage: "https://github.com/prosyslab/turbo-tv"
+dev-repo: "git+https://github.com/prosyslab/turbo-tv.git"
+
+depends: [
+    "ocaml" {>= "5.3.0"}
+    "dune" {>= "3.12"}
+    "ocamlgraph" {>= "2.1.0"}
+    "z3"
+    "core_unix"
+    "cmdliner"
+    "oUnit"
+]
+
+build: [
+    ["dune" "build" "-p" name "-j" jobs]
+]
+
+install: [
+    ["dune" "install" "-p" name]
+]

@@ -1,5 +1,6 @@
 (executable
  (name turbo-tv)
+ (public_name turbo-tv)
  (libraries lib)
  (flags
   (:standard -w -24)))
