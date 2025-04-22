@@ -38,8 +38,6 @@ module Edge = struct
 
   let value = Value
 
-  let effect = Effect
-
   let control = Control
 
   let to_str t =
@@ -222,7 +220,7 @@ let create_from graph_lines =
          in
          G.add_vertex g node
          |> connect_inedges Edge.value node_id value_innodes
-         |> connect_inedges Edge.effect node_id effect_innodes
+         |> connect_inedges Edge.Effect node_id effect_innodes
          |> connect_inedges Edge.control node_id control_innodes)
        G.empty
 
