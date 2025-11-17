@@ -434,6 +434,23 @@ let encode_instr program ?(check_wasm = false)
       let cid = Operands.id_of_nth operands 1 in
       let ctrl = ControlFile.find cid cf in
       js_stack_check () ctrl
+  | JSStoreGlobal ->
+      (* B2V1V2E1C1: bracket operands (sloppy mode, global name), value to store, context, effect, control *)
+      (* Note: The bracket parser only extracts the second bracket operand (b2), so we adjust indices *)
+      let b1 = "sloppy" in (* sloppy mode - hardcoded since parser doesn't extract it *)
+      let b2 = Operands.const_of_nth operands 0 in (* global name - first bracket operand in list *)
+      let v1_id = Operands.id_of_nth operands 1 in (* value to store *)
+      let v1 = RegisterFile.find v1_id rf in
+      let v2_id = Operands.id_of_nth operands 2 in (* context *)
+      let v2 = RegisterFile.find v2_id rf in
+      let _eid = Operands.id_of_nth operands 3 in (* effect *)
+      let cid = Operands.id_of_nth operands 4 in (* control *)
+      let ctrl = ControlFile.find cid cf in
+      (* JSStoreGlobal is a side effect that doesn't produce a value *)
+      (* For verification purposes, we treat it as a no-op that respects control flow *)
+      js_store_global b1 b2 v1 v2 () ctrl
+    (* TODO AD Speculative add smi *)
+  
   (* simplified: number-arith *)
   | CheckedInt32Add -> encode_v2e1c1 checked_int32_add
   | CheckedInt32Div -> encode_v2e1c1 checked_int32_div
@@ -553,6 +570,8 @@ let encode_instr program ?(check_wasm = false)
   | SpeculativeBigIntNegate -> encode_v1m speculative_bigint_negate
   | SpeculativeBigIntShiftLeft -> encode_v2m speculative_bigint_shift_left
   | SpeculativeBigIntShiftRight -> encode_v2m speculative_bigint_shift_right
+  (*Speculative smi*)
+  | SpeculativeSmallIntegerAdd -> encode_h1v2e1c1 speculative_smi_add
   (* bitwise *)
   | BigIntBitwiseAnd -> encode_v2m bigint_bitwise_and
   | BigIntBitwiseOr -> encode_v2m bigint_bitwise_or

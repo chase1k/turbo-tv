@@ -1106,7 +1106,7 @@ let get_kind opcode =
   | JSObjectIsArray | JSOrdinaryHasInstance | JSParseInt | JSPerformPromiseThen
   | JSPromiseResolve | JSRegExpTest | JSRejectPromise | JSResolvePromise
   | JSSetKeyedProperty | JSSetNamedProperty | JSShiftLeft | JSShiftRight
-  | JSShiftRightLogical | JSStoreContext | JSStoreGlobal | JSStoreInArrayLiteral
+  | JSShiftRightLogical | JSStoreContext | JSStoreInArrayLiteral
   | JSStoreMessage | JSStoreModule | JSStoreNamed | JSStoreProperty
   | JSStrictEqual | JSSubtract | JSToBigIntConvertNumber | JSToLength | JSToName
   | JSToNumber | JSToNumberConvertBigInt | JSToNumeric | JSToObject | JSToString
@@ -1259,6 +1259,7 @@ let get_kind opcode =
       V1V2C1
   | JSCall -> B1VVC1
   | JSStackCheck | Unreachable -> E1C1
+  | JSStoreGlobal -> B2V1V2E1C1
   | Load | LoadFromObject | ProtectedLoad -> V1V2B1C1
   | LoadElement -> B1B2B4V1V2C1
   | LoadField -> B2B3D3V1E1C1

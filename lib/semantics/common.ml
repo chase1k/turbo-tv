@@ -239,6 +239,9 @@ let js_call n_input fname state =
 
 let js_stack_check _eff control state = state |> State.update ~control
 
+let js_store_global _b1 _b2 _v1 _v2 _eff control state =
+  state |> State.update ~control
+
 let call fname n_return args control state =
   let return_sort = BV.mk_sort ctx (Value.len * n_return) in
   let arg_sort = BV.mk_sort ctx Value.len in
