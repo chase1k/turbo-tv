@@ -750,6 +750,11 @@ SpeculativeBigIntShiftLeft,v1,v2
 SpeculativeBigIntShiftRight,v1,v2
 SpeculativeBigIntSubtract,v1,v2
 SpeculativeNumberAdd,b1,v1,v2,e1,c1
+SpeculativeSmallIntegerAdd,b1,v1,v2,e1,c1
+SpeculativeSmallIntegerDivide,b1,v1,v2,e1,c1
+SpeculativeSmallIntegerModulus,b1,v1,v2,e1,c1
+SpeculativeSmallIntegerMultiply,b1,v1,v2,e1,c1
+SpeculativeSmallIntegerSubtract,b1,v1,v2,e1,c1
 SpeculativeNumberBitwiseAnd,b1,v1,v2,e1,c1
 SpeculativeNumberBitwiseOr,b1,v1,v2,e1,c1
 SpeculativeNumberBitwiseXor,b1,v1,v2,e1,c1

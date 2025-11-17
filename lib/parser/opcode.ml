@@ -920,6 +920,11 @@ type t =
   (* b1v1v2e1c1 *)
   | CheckedInt32Mul
   | SpeculativeNumberAdd
+  | SpeculativeSmallIntegerAdd
+  | SpeculativeSmallIntegerDivide
+  | SpeculativeSmallIntegerModulus
+  | SpeculativeSmallIntegerMultiply
+  | SpeculativeSmallIntegerSubtract
   | SpeculativeNumberBitwiseAnd
   | SpeculativeNumberBitwiseOr
   | SpeculativeNumberBitwiseXor
@@ -1234,9 +1239,12 @@ let get_kind opcode =
   | EnsureWritableFastElements | SpeculativeSafeIntegerAdd
   | SpeculativeSafeIntegerSubtract | StringCharCodeAt | StringCodePointAt ->
       V1V2E1C1
-  | CheckedInt32Mul | SpeculativeNumberAdd | SpeculativeNumberBitwiseAnd
-  | SpeculativeNumberBitwiseOr | SpeculativeNumberBitwiseXor
-  | SpeculativeNumberDivide | SpeculativeNumberEqual | SpeculativeNumberLessThan
+  | CheckedInt32Mul | SpeculativeNumberAdd | SpeculativeSmallIntegerAdd
+  | SpeculativeSmallIntegerDivide | SpeculativeSmallIntegerModulus
+  | SpeculativeSmallIntegerMultiply | SpeculativeSmallIntegerSubtract
+  | SpeculativeNumberBitwiseAnd | SpeculativeNumberBitwiseOr
+  | SpeculativeNumberBitwiseXor | SpeculativeNumberDivide
+  | SpeculativeNumberEqual | SpeculativeNumberLessThan
   | SpeculativeNumberLessThanOrEqual | SpeculativeNumberModulus
   | SpeculativeNumberMultiply | SpeculativeNumberShiftLeft
   | SpeculativeNumberShiftRight | SpeculativeNumberShiftRightLogical
@@ -2175,6 +2183,11 @@ let of_str str =
   | "StringCodePointAt" -> StringCodePointAt
   | "CheckedInt32Mul" -> CheckedInt32Mul
   | "SpeculativeNumberAdd" -> SpeculativeNumberAdd
+  | "SpeculativeSmallIntegerAdd" -> SpeculativeSmallIntegerAdd
+  | "SpeculativeSmallIntegerDivide" -> SpeculativeSmallIntegerDivide
+  | "SpeculativeSmallIntegerModulus" -> SpeculativeSmallIntegerModulus
+  | "SpeculativeSmallIntegerMultiply" -> SpeculativeSmallIntegerMultiply
+  | "SpeculativeSmallIntegerSubtract" -> SpeculativeSmallIntegerSubtract
   | "SpeculativeNumberBitwiseAnd" -> SpeculativeNumberBitwiseAnd
   | "SpeculativeNumberBitwiseOr" -> SpeculativeNumberBitwiseOr
   | "SpeculativeNumberBitwiseXor" -> SpeculativeNumberBitwiseXor
@@ -3093,6 +3106,11 @@ let to_str opcode =
   | StringCodePointAt -> "StringCodePointAt"
   | CheckedInt32Mul -> "CheckedInt32Mul"
   | SpeculativeNumberAdd -> "SpeculativeNumberAdd"
+  | SpeculativeSmallIntegerAdd -> "SpeculativeSmallIntegerAdd"
+  | SpeculativeSmallIntegerDivide -> "SpeculativeSmallIntegerDivide"
+  | SpeculativeSmallIntegerModulus -> "SpeculativeSmallIntegerModulus"
+  | SpeculativeSmallIntegerMultiply -> "SpeculativeSmallIntegerMultiply"
+  | SpeculativeSmallIntegerSubtract -> "SpeculativeSmallIntegerSubtract"
   | SpeculativeNumberBitwiseAnd -> "SpeculativeNumberBitwiseAnd"
   | SpeculativeNumberBitwiseOr -> "SpeculativeNumberBitwiseOr"
   | SpeculativeNumberBitwiseXor -> "SpeculativeNumberBitwiseXor"
