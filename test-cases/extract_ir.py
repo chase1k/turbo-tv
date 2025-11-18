@@ -54,6 +54,15 @@ CONTROL_LAST_OPCODES = {
     'CheckedTaggedSignedToInt32', 'SpeculativeSmallIntegerAdd'
 }
 
+# Call opcodes: have value inputs (function + args), effect, and control
+# Pattern: b1,vv,c1 (1 boolean, variable value inputs, 1 control)
+# Actual: value inputs (function + args), effect input, control input
+CALL_OPCODES = {
+    'JSCall', 'JSCallForwardVarargs', 'JSCallRuntime', 'JSCallWithArrayLike',
+    'JSCallWithSpread', 'JSConstruct', 'JSConstructForwardVarargs',
+    'JSConstructWithArrayLike', 'JSConstructWithSpread', 'Call'
+}
+
 
 def parse_ir_line(line):
     """Parse an IR line into components."""
@@ -189,6 +198,50 @@ def classify_edges(opcode, inputs):
         if inputs:
             return [inputs[0]], [], []
         return [], [], []
+    
+    # Call opcodes: value inputs (function + args), effect, control
+    # Pattern: b1,vv,c1 -> value inputs (function + args), effect, control
+    # From JSON: "4 v 1 eff 1 ctrl in" means value inputs, effect, control
+    if opcode in CALL_OPCODES:
+        if len(inputs) == 0:
+            return [], [], []
+        elif len(inputs) == 1:
+            # Single input: could be control or value
+            if any(ctrl in inputs[0] for ctrl in ['Start', 'JSStackCheck', 'Checkpoint', 'Merge', 'End']):
+                return [], [inputs[0]], [inputs[0]]
+            else:
+                return [inputs[0]], [], []
+        elif len(inputs) == 2:
+            # Two inputs: check if second is control/effect
+            if any(ctrl in inputs[1] for ctrl in ['Start', 'JSStackCheck', 'Checkpoint', 'Merge', 'End']):
+                return [inputs[0]], [inputs[1]], [inputs[1]]
+            else:
+                # Both might be value (function + single arg)
+                return inputs, [], []
+        elif len(inputs) >= 3:
+            # Pattern: value inputs (function + args), effect, control
+            # Last input is typically control
+            # Second-to-last is typically effect (Checkpoint, FrameState, etc.)
+            last = inputs[-1]
+            second_last = inputs[-2]
+            
+            # Check if last is control
+            is_control = any(ctrl in last for ctrl in ['Start', 'JSStackCheck', 'Checkpoint', 'Merge', 'End', 'Return'])
+            # Check if second-to-last is effect
+            is_effect = any(eff in second_last for eff in ['Checkpoint', 'JSStackCheck', 'FrameState'])
+            
+            if is_control and is_effect:
+                # Standard pattern: value inputs, effect, control
+                return inputs[:-2], [inputs[-2]], [inputs[-1]]
+            elif is_control:
+                # Has control but effect might be missing or in value position
+                # All but last are value/effect, last is control
+                return inputs[:-1], [inputs[-1]], [inputs[-1]]
+            else:
+                # No clear control/effect pattern, treat all as value
+                return inputs, [], []
+        else:
+            return inputs, [], []
     
     # Return: first N-2 are value, second-to-last is effect, last is control
     if opcode == 'Return':
@@ -360,22 +413,31 @@ def extract_ir_from_trace(trace_content, phase_pattern, exclude_pattern):
         if phase_pattern in line:
             in_phase = True
         
-        # Check if we're leaving the phase (matches pattern2 or the inner check)
-        if in_phase:
-            # Inner check: if (/Graph after V8.TF/ && !/TypedLowering/) exit
-            if 'Graph after V8.TF' in line:
-                if exclude_pattern and exclude_pattern not in line:
-                    # Early exit - we've moved to a different phase
-                    break
-                # Also check the [^X] pattern
-                if end_pattern and end_pattern.search(line):
-                    # Matched the end pattern - stop extracting
-                    break
-        
-        # Collect IR lines (lines starting with #)
+        # Collect IR lines (lines starting with #) before checking if we should stop
         # This matches: if (/^#/) print
         if in_phase and line.startswith('#'):
             ir_lines.append(line)
+        
+        # Check if we're leaving the phase (matches pattern2 or the inner check)
+        if in_phase:
+            # If we see the exclude pattern (next phase), stop extracting
+            if exclude_pattern and 'Graph after V8.TF' in line:
+                # Check if this is the phase we want to stop at
+                if exclude_pattern in line:
+                    # We've reached the next phase, stop extracting
+                    break
+            # Inner check: if (/Graph after V8.TF/ && !/target/) exit
+            if 'Graph after V8.TF' in line:
+                # For TypedLowering, we want to stop at anything that's not TypedLowering
+                # This uses the [^X] pattern logic for single character excludes
+                if exclude_pattern and len(exclude_pattern) == 1:
+                    if end_pattern and end_pattern.search(line):
+                        break
+                elif exclude_pattern and exclude_pattern not in line and len(exclude_pattern) > 1:
+                    # If exclude_pattern is a full phase name and it's not in this line,
+                    # and we see a different phase, continue (don't break)
+                    # Only break if we see the exclude_pattern itself
+                    pass
     
     return '\n'.join(ir_lines)
 
@@ -389,6 +451,7 @@ def main():
 Examples:
   %(prog)s test.js
   %(prog)s test.js myFunction
+  %(prog)s test.js "a|b" output/
   %(prog)s test.js myFunction output/
   %(prog)s test.js myFunction output/ --no-convert
         """
@@ -396,7 +459,7 @@ Examples:
     
     parser.add_argument('js_file', help='JavaScript file to process')
     parser.add_argument('function_name', nargs='?', default='*',
-                       help='Function name to filter (default: *)')
+                       help='Function name or pattern to filter (e.g., "myFunction" or "a|b" for multiple functions, default: *)')
     parser.add_argument('output_dir', nargs='?', default='.',
                        help='Output directory (default: current directory)')
     parser.add_argument('--no-convert', action='store_true',
@@ -425,25 +488,72 @@ Examples:
     os.makedirs(output_dir, exist_ok=True)
     
     # Run d8 with trace-turbo and capture output
-    print(f"Running d8 with trace-turbo for function: {func_name}")
+    print(f"Running d8 with trace-turbo for function filter: {func_name}")
     try:
-        result = subprocess.run(
-            [d8_path, '--trace-turbo', '--trace-turbo-graph',
-             f'--trace-turbo-filter={func_name}', '--allow-natives-syntax', js_file],
-            capture_output=True,
-            text=True,
-            check=False
-        )
-        # d8 outputs trace to stderr, but old script captures both with 2>&1
-        # Combine both stdout and stderr to match old behavior
-        trace_content = result.stdout + result.stderr
+        # Check if pattern contains pipe (multiple functions)
+        # d8 may not support pipe syntax directly, so we'll try it first,
+        # and if it fails, split and run separately
+        if '|' in func_name:
+            # Try the pattern as-is first (d8 might support regex)
+            cmd = [d8_path, '--trace-turbo', '--trace-turbo-graph',
+                   f'--trace-turbo-filter={func_name}', '--allow-natives-syntax', js_file]
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            trace_content = result.stdout + result.stderr
+            
+            # If no output, split and run separately
+            if not trace_content.strip() or 'Graph after' not in trace_content:
+                # Split on pipe and run for each function
+                functions = [f.strip() for f in func_name.split('|')]
+                print(f"Pattern '{func_name}' didn't produce output, running separately for: {', '.join(functions)}")
+                all_traces = []
+                for func in functions:
+                    print(f"  Extracting trace for function: {func}")
+                    cmd = [d8_path, '--trace-turbo', '--trace-turbo-graph',
+                           f'--trace-turbo-filter={func}', '--allow-natives-syntax', js_file]
+                    result = subprocess.run(
+                        cmd,
+                        capture_output=True,
+                        text=True,
+                        check=False
+                    )
+                    func_trace = result.stdout + result.stderr
+                    if func_trace.strip() and 'Graph after' in func_trace:
+                        all_traces.append(func_trace)
+                
+                # Combine traces (they should be independent)
+                trace_content = '\n'.join(all_traces)
+        else:
+            # Single function pattern
+            cmd = [d8_path, '--trace-turbo', '--trace-turbo-graph',
+                   f'--trace-turbo-filter={func_name}', '--allow-natives-syntax', js_file]
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                check=False
+            )
+            trace_content = result.stdout + result.stderr
+        
+        # Debug: check if we got any trace output
+        if not trace_content.strip():
+            print(f"Warning: No trace output from d8. Return code: {result.returncode}", file=sys.stderr)
+            print(f"Command: {' '.join(cmd)}", file=sys.stderr)
+        elif 'Graph after' not in trace_content:
+            print(f"Warning: Trace output doesn't contain graph phases. Output length: {len(trace_content)}", file=sys.stderr)
     except Exception as e:
         print(f"Error running d8: {e}", file=sys.stderr)
         sys.exit(1)
     
-    # Extract IR from TypedLowering phase (before optimization) -> src.ir.raw
+    # Extract IR from BytecodeGraphBuilder phase (before inlining/optimization) -> src.ir.raw
+    # This phase preserves JSCall opcodes before they get inlined
     src_ir_raw = os.path.join(output_dir, 'src.ir.raw')
-    src_ir_content = extract_ir_from_trace(trace_content, 'Graph after V8.TFTypedLowering', 'TypedLowering')
+    # For BytecodeGraphBuilder, we stop at the next phase (Inlining)
+    src_ir_content = extract_ir_from_trace(trace_content, 'Graph after V8.TFBytecodeGraphBuilder', 'Inlining')
     with open(src_ir_raw, 'w') as f:
         f.write(src_ir_content)
     

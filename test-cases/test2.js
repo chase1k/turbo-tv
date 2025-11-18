@@ -1,4 +1,4 @@
-function b(x) { return x + 2n; }
+function b(x) { return x + " World"; }
 function a(x) {
   let y = x + b(x);
   return y;
@@ -9,12 +9,12 @@ function a(x) {
 %PrepareFunctionForOptimization(a);
 
 // Warm-up loop to meet TurboFan hotness
-for (let i = 0; i < 10000; i++) a(1n);
+for (let i = 0; i < 10000; i++) a("Hello ");
 
 // Force optimization
 %OptimizeFunctionOnNextCall(b);
-b(1n);
+b(1);
 
 %OptimizeFunctionOnNextCall(a);
-a(1n);
+a(1);
 
