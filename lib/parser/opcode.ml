@@ -1231,7 +1231,7 @@ let get_kind opcode =
   | ChangeFloat64ToTagged | CheckedFloat64ToInt32 | Projection
   | SpeculativeBigIntAsIntN | SpeculativeBigIntAsUintN ->
       B1V1
-  | CheckBounds | CheckedUint32Bounds | CheckedUint64Bounds -> B2V1V2E1C1
+  | CheckBounds | CheckedUint32Bounds | CheckedUint64Bounds | JSStoreGlobal -> B2V1V2E1C1
   | CheckMaps -> B2V1
   | CheckedInt32Add | CheckedInt32Div | CheckedInt32Sub | CheckedInt64Add
   | CheckedInt64Div | CheckedInt64Mod | CheckedInt64Mul | CheckedInt64Sub
@@ -1259,7 +1259,6 @@ let get_kind opcode =
       V1V2C1
   | JSCall -> B1VVC1
   | JSStackCheck | Unreachable -> E1C1
-  | JSStoreGlobal -> B2V1V2E1C1
   | Load | LoadFromObject | ProtectedLoad -> V1V2B1C1
   | LoadElement -> B1B2B4V1V2C1
   | LoadField -> B2B3D3V1E1C1
