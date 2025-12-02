@@ -675,6 +675,10 @@ let speculative_bigint_less_than = speculative_bigint_compare bigint_less_than
 let speculative_bigint_less_than_or_equal =
   speculative_bigint_compare bigint_less_than_or_equal
 
+(* Speculative smallInteger(smi) operations *)
+let speculative_smi_add _hint lval rval _eff control state =
+  checked_int32_add lval rval _eff control state
+
 (* simplified: object *)
 
 let object_is_minus_zero pval mem state =

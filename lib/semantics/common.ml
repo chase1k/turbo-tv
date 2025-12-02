@@ -239,6 +239,12 @@ let js_call n_input fname state =
 
 let js_stack_check _eff control state = state |> State.update ~control
 
+let js_store_global _b1 _b2 v1 v2 _eff control state =
+  let mem = state.State.memory in
+  let raw_ptr = TaggedPointer.to_raw_pointer v2 in
+  let mem = Memory.Bytes.store Bool.tr raw_ptr 8 v1 mem in
+  state |> State.update ~control ~mem
+
 let call fname n_return args control state =
   let return_sort = BV.mk_sort ctx (Value.len * n_return) in
   let arg_sort = BV.mk_sort ctx Value.len in

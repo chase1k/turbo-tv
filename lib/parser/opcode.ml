@@ -920,6 +920,11 @@ type t =
   (* b1v1v2e1c1 *)
   | CheckedInt32Mul
   | SpeculativeNumberAdd
+  | SpeculativeSmallIntegerAdd
+  | SpeculativeSmallIntegerDivide
+  | SpeculativeSmallIntegerModulus
+  | SpeculativeSmallIntegerMultiply
+  | SpeculativeSmallIntegerSubtract
   | SpeculativeNumberBitwiseAnd
   | SpeculativeNumberBitwiseOr
   | SpeculativeNumberBitwiseXor
@@ -1101,7 +1106,7 @@ let get_kind opcode =
   | JSObjectIsArray | JSOrdinaryHasInstance | JSParseInt | JSPerformPromiseThen
   | JSPromiseResolve | JSRegExpTest | JSRejectPromise | JSResolvePromise
   | JSSetKeyedProperty | JSSetNamedProperty | JSShiftLeft | JSShiftRight
-  | JSShiftRightLogical | JSStoreContext | JSStoreGlobal | JSStoreInArrayLiteral
+  | JSShiftRightLogical | JSStoreContext | JSStoreInArrayLiteral
   | JSStoreMessage | JSStoreModule | JSStoreNamed | JSStoreProperty
   | JSStrictEqual | JSSubtract | JSToBigIntConvertNumber | JSToLength | JSToName
   | JSToNumber | JSToNumberConvertBigInt | JSToNumeric | JSToObject | JSToString
@@ -1226,7 +1231,7 @@ let get_kind opcode =
   | ChangeFloat64ToTagged | CheckedFloat64ToInt32 | Projection
   | SpeculativeBigIntAsIntN | SpeculativeBigIntAsUintN ->
       B1V1
-  | CheckBounds | CheckedUint32Bounds | CheckedUint64Bounds -> B2V1V2E1C1
+  | CheckBounds | CheckedUint32Bounds | CheckedUint64Bounds | JSStoreGlobal -> B2V1V2E1C1
   | CheckMaps -> B2V1
   | CheckedInt32Add | CheckedInt32Div | CheckedInt32Sub | CheckedInt64Add
   | CheckedInt64Div | CheckedInt64Mod | CheckedInt64Mul | CheckedInt64Sub
@@ -1234,9 +1239,12 @@ let get_kind opcode =
   | EnsureWritableFastElements | SpeculativeSafeIntegerAdd
   | SpeculativeSafeIntegerSubtract | StringCharCodeAt | StringCodePointAt ->
       V1V2E1C1
-  | CheckedInt32Mul | SpeculativeNumberAdd | SpeculativeNumberBitwiseAnd
-  | SpeculativeNumberBitwiseOr | SpeculativeNumberBitwiseXor
-  | SpeculativeNumberDivide | SpeculativeNumberEqual | SpeculativeNumberLessThan
+  | CheckedInt32Mul | SpeculativeNumberAdd | SpeculativeSmallIntegerAdd
+  | SpeculativeSmallIntegerDivide | SpeculativeSmallIntegerModulus
+  | SpeculativeSmallIntegerMultiply | SpeculativeSmallIntegerSubtract
+  | SpeculativeNumberBitwiseAnd | SpeculativeNumberBitwiseOr
+  | SpeculativeNumberBitwiseXor | SpeculativeNumberDivide
+  | SpeculativeNumberEqual | SpeculativeNumberLessThan
   | SpeculativeNumberLessThanOrEqual | SpeculativeNumberModulus
   | SpeculativeNumberMultiply | SpeculativeNumberShiftLeft
   | SpeculativeNumberShiftRight | SpeculativeNumberShiftRightLogical
@@ -2175,6 +2183,11 @@ let of_str str =
   | "StringCodePointAt" -> StringCodePointAt
   | "CheckedInt32Mul" -> CheckedInt32Mul
   | "SpeculativeNumberAdd" -> SpeculativeNumberAdd
+  | "SpeculativeSmallIntegerAdd" -> SpeculativeSmallIntegerAdd
+  | "SpeculativeSmallIntegerDivide" -> SpeculativeSmallIntegerDivide
+  | "SpeculativeSmallIntegerModulus" -> SpeculativeSmallIntegerModulus
+  | "SpeculativeSmallIntegerMultiply" -> SpeculativeSmallIntegerMultiply
+  | "SpeculativeSmallIntegerSubtract" -> SpeculativeSmallIntegerSubtract
   | "SpeculativeNumberBitwiseAnd" -> SpeculativeNumberBitwiseAnd
   | "SpeculativeNumberBitwiseOr" -> SpeculativeNumberBitwiseOr
   | "SpeculativeNumberBitwiseXor" -> SpeculativeNumberBitwiseXor
@@ -3093,6 +3106,11 @@ let to_str opcode =
   | StringCodePointAt -> "StringCodePointAt"
   | CheckedInt32Mul -> "CheckedInt32Mul"
   | SpeculativeNumberAdd -> "SpeculativeNumberAdd"
+  | SpeculativeSmallIntegerAdd -> "SpeculativeSmallIntegerAdd"
+  | SpeculativeSmallIntegerDivide -> "SpeculativeSmallIntegerDivide"
+  | SpeculativeSmallIntegerModulus -> "SpeculativeSmallIntegerModulus"
+  | SpeculativeSmallIntegerMultiply -> "SpeculativeSmallIntegerMultiply"
+  | SpeculativeSmallIntegerSubtract -> "SpeculativeSmallIntegerSubtract"
   | SpeculativeNumberBitwiseAnd -> "SpeculativeNumberBitwiseAnd"
   | SpeculativeNumberBitwiseOr -> "SpeculativeNumberBitwiseOr"
   | SpeculativeNumberBitwiseXor -> "SpeculativeNumberBitwiseXor"
